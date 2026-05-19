@@ -6,6 +6,7 @@ import pandas as pd
 from datetime import datetime
 
 ETFS = [
+    ("0050.TW",    "0050 元大台灣50"),
     ("00757.TW",   "00757"),
     ("00631L.TW",  "00631L"),
     ("00662.TW",   "00662"),
