@@ -1,0 +1,37 @@
+name: 更新 ETF KD 監控頁面
+
+on:
+  schedule:
+    # 台灣時間 14:30 = UTC 06:30，週一至週五（台股收盤後）
+    - cron: "30 6 * * 1-5"
+  workflow_dispatch:   # 允許手動從 Actions 頁面觸發
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate index.html
+        run: python generate.py
+
+      - name: Commit & push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "chore: 自動更新 ETF KD 數據 $(date +'%Y-%m-%d %H:%M UTC')"
+          git push
