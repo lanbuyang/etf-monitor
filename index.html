@@ -146,7 +146,7 @@
 
 <div class="card">
   <h1>台股 ETF KD 監控</h1>
-  <p class="subtitle">更新時間：2026-05-20 13:21 UTC+8　　每日台灣時間 14:30 自動更新</p>
+  <p class="subtitle">更新時間：2026-05-20 13:26 UTC+8　　每日台灣時間 14:30 自動更新</p>
   <table>
     <thead>
       <tr>
@@ -159,13 +159,13 @@
       </tr>
     </thead>
     <tbody>
-        <tr style="background:#2d2710">
+        <tr style="background:#1b2d1e">
           <td style="color:#e9ecef;font-weight:600">0050 元大台灣50</td>
-          <td style="color:#ffd43b;font-weight:700">22.32</td>
+          <td style="color:#69db7c;font-weight:700">22.32</td>
           <td style="color:#a78bfa;font-size:13px">22.32</td>
           <td style="color:#868e96">43.64</td>
           <td style="color:#e9ecef">92.50</td>
-          <td style="color:#ffd43b;font-weight:700">🟡 當月買進觀望</td>
+          <td style="color:#69db7c;font-weight:700">🟢 買進</td>
         </tr>
         <tr style="background:#222">
           <td style="color:#e9ecef;font-weight:600">00757</td>
@@ -175,13 +175,13 @@
           <td style="color:#e9ecef">126.35</td>
           <td style="color:#adb5bd;font-weight:700">⚪ 觀望</td>
         </tr>
-        <tr style="background:#2d2710">
+        <tr style="background:#1b2d1e">
           <td style="color:#e9ecef;font-weight:600">00631L</td>
-          <td style="color:#ffd43b;font-weight:700">22.19</td>
+          <td style="color:#69db7c;font-weight:700">22.19</td>
           <td style="color:#a78bfa;font-size:13px">22.19</td>
           <td style="color:#868e96">43.01</td>
           <td style="color:#e9ecef">29.51</td>
-          <td style="color:#ffd43b;font-weight:700">🟡 當月買進觀望</td>
+          <td style="color:#69db7c;font-weight:700">🟢 買進</td>
         </tr>
         <tr style="background:#222">
           <td style="color:#e9ecef;font-weight:600">00662</td>
@@ -257,20 +257,23 @@
 
       <h4>「當月觀望」修正</h4>
       <blockquote>
-        若本月（月初至昨天）每日收盤的 K9 <strong>曾經</strong>超過 80 或低於 30，則當月訊號改為「觀望」
+        若本月（月初至昨天）每日收盤的 K9 <strong>曾經超過 80</strong>，則當月賣出訊號改為觀望；
+        <strong>曾經低於 30</strong>，則當月買進訊號改為觀望。<br>
+        方向相反的訊號不受影響。
       </blockquote>
       <table>
-        <thead><tr><th>今日 K9</th><th>本月曾出現訊號？</th><th>最終顯示</th></tr></thead>
+        <thead><tr><th>今日 K9</th><th>本月曾出現同方向訊號？</th><th>最終顯示</th></tr></thead>
         <tbody>
-          <tr><td>&gt; 80</td><td>否</td><td>🔴 賣出</td></tr>
-          <tr><td>&gt; 80</td><td>是</td><td>🟡 當月賣出觀望</td></tr>
-          <tr><td>&lt; 30</td><td>否</td><td>🟢 買進</td></tr>
-          <tr><td>&lt; 30</td><td>是</td><td>🟡 當月買進觀望</td></tr>
+          <tr><td>&gt; 80</td><td>本月曾 &gt; 80</td><td>🟡 當月賣出觀望</td></tr>
+          <tr><td>&gt; 80</td><td>本月只有 &lt; 30（或無）</td><td>🔴 賣出</td></tr>
+          <tr><td>&lt; 30</td><td>本月曾 &lt; 30</td><td>🟡 當月買進觀望</td></tr>
+          <tr><td>&lt; 30</td><td>本月只有 &gt; 80（或無）</td><td>🟢 買進</td></tr>
           <tr><td>30 – 80</td><td>—</td><td>⚪ 觀望</td></tr>
         </tbody>
       </table>
       <span style="color:#555">
-        同一個月內，每日收盤的 KD 只取第一次突破訊號，後續若再次穿越閾值則忽略，避免頻繁進出。
+        同一個月內，每日收盤的 KD 只取第一次同方向突破訊號，避免重複進出；
+        但方向反轉（如本月先出現賣出、後出現買進）視為新訊號，正常顯示。
       </span>
     </div>
   </div>
