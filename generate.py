@@ -75,14 +75,12 @@ def fetch_data():
 
             sig_k  = lk_adj if lk_adj is not None else lk
             sig_ks = k_adj  if k_adj  is not None else k
-            had_signal = (
-                bool((this_month_k(sig_ks) > SELL_THRESHOLD).any()) or
-                bool((this_month_k(sig_ks) < BUY_THRESHOLD).any())
-            )
+            had_sell = bool((this_month_k(sig_ks) > SELL_THRESHOLD).any())
+            had_buy  = bool((this_month_k(sig_ks) < BUY_THRESHOLD).any())
             if sig_k > SELL_THRESHOLD:
-                signal = "當月賣出觀望" if had_signal else "賣出"
+                signal = "當月賣出觀望" if had_sell else "賣出"
             elif sig_k < BUY_THRESHOLD:
-                signal = "當月買進觀望" if had_signal else "買進"
+                signal = "當月買進觀望" if had_buy else "買進"
             else:
                 signal = "觀望"
 
@@ -318,20 +316,23 @@ def build_html(data):
 
       <h4>「當月觀望」修正</h4>
       <blockquote>
-        若本月（月初至昨天）每日收盤的 K9 <strong>曾經</strong>超過 80 或低於 30，則當月訊號改為「觀望」
+        若本月（月初至昨天）每日收盤的 K9 <strong>曾經超過 80</strong>，則當月賣出訊號改為觀望；
+        <strong>曾經低於 30</strong>，則當月買進訊號改為觀望。<br>
+        方向相反的訊號不受影響。
       </blockquote>
       <table>
-        <thead><tr><th>今日 K9</th><th>本月曾出現訊號？</th><th>最終顯示</th></tr></thead>
+        <thead><tr><th>今日 K9</th><th>本月曾出現同方向訊號？</th><th>最終顯示</th></tr></thead>
         <tbody>
-          <tr><td>&gt; 80</td><td>否</td><td>🔴 賣出</td></tr>
-          <tr><td>&gt; 80</td><td>是</td><td>🟡 當月賣出觀望</td></tr>
-          <tr><td>&lt; 30</td><td>否</td><td>🟢 買進</td></tr>
-          <tr><td>&lt; 30</td><td>是</td><td>🟡 當月買進觀望</td></tr>
+          <tr><td>&gt; 80</td><td>本月曾 &gt; 80</td><td>🟡 當月賣出觀望</td></tr>
+          <tr><td>&gt; 80</td><td>本月只有 &lt; 30（或無）</td><td>🔴 賣出</td></tr>
+          <tr><td>&lt; 30</td><td>本月曾 &lt; 30</td><td>🟡 當月買進觀望</td></tr>
+          <tr><td>&lt; 30</td><td>本月只有 &gt; 80（或無）</td><td>🟢 買進</td></tr>
           <tr><td>30 – 80</td><td>—</td><td>⚪ 觀望</td></tr>
         </tbody>
       </table>
       <span style="color:#555">
-        同一個月內，每日收盤的 KD 只取第一次突破訊號，後續若再次穿越閾值則忽略，避免頻繁進出。
+        同一個月內，每日收盤的 KD 只取第一次同方向突破訊號，避免重複進出；
+        但方向反轉（如本月先出現賣出、後出現買進）視為新訊號，正常顯示。
       </span>
     </div>
   </div>

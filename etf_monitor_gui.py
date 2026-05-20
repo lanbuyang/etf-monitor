@@ -88,11 +88,12 @@ def fetch_data():
             # 訊號以調整 K9 為準；若調整 K9 取得失敗則退回原始 K9
             sig_k  = lk_adj if lk_adj is not None else lk
             sig_ks = k_adj  if k_adj  is not None else k
-            had_signal = had_sell_this_month(sig_ks) or had_buy_this_month(sig_ks)
+            had_sell = had_sell_this_month(sig_ks)
+            had_buy  = had_buy_this_month(sig_ks)
             if sig_k > SELL_THRESHOLD:
-                signal = "當月賣出觀望" if had_signal else "賣出"
+                signal = "當月賣出觀望" if had_sell else "賣出"
             elif sig_k < BUY_THRESHOLD:
-                signal = "當月買進觀望" if had_signal else "買進"
+                signal = "當月買進觀望" if had_buy else "買進"
             else:
                 signal = "觀望"
             rows.append((name, lk, lk_adj, ld, lc, signal))
