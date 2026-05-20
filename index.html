@@ -34,6 +34,46 @@
     display: inline-block; margin-top: 20px; padding: 6px 14px;
     background: #2a2a2a; border-radius: 8px; font-size: 12px; color: #555;
   }
+
+  /* 訊號說明展開區塊 */
+  .info-section {
+    margin-top: 24px;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .info-toggle {
+    width: 100%; background: #2a2a2a; border: none; cursor: pointer;
+    padding: 12px 16px; display: flex; justify-content: space-between;
+    align-items: center; color: #74c7ec; font-size: 14px; font-weight: 600;
+  }
+  .info-toggle:hover { background: #333; }
+  .info-toggle .arrow { transition: transform .25s; font-style: normal; }
+  .info-body {
+    display: none; padding: 20px; font-size: 13px; color: #adb5bd;
+    line-height: 1.8;
+  }
+  .info-body.open { display: block; }
+  .info-body h4 { color: #74c7ec; margin: 14px 0 6px; font-size: 13px; }
+  .info-body h4:first-child { margin-top: 0; }
+  .info-body code {
+    background: #2a2a2a; padding: 2px 6px; border-radius: 4px;
+    font-family: monospace; font-size: 12px; color: #e9ecef;
+  }
+  .info-body table {
+    width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;
+  }
+  .info-body th {
+    background: #252525; color: #74c7ec; padding: 8px 12px;
+    text-align: left; font-size: 12px; letter-spacing: 0;
+  }
+  .info-body td { padding: 8px 12px; border-bottom: 1px solid #2a2a2a; color: #adb5bd; }
+  .info-body tr:last-child td { border-bottom: none; }
+  .info-body blockquote {
+    border-left: 3px solid #74c7ec; margin: 10px 0;
+    padding: 8px 14px; background: #1a2a2a; border-radius: 0 6px 6px 0;
+    color: #74c7ec; font-size: 13px;
+  }
   .btn-row { display: flex; gap: 10px; align-items: center; margin-top: 20px; flex-wrap: wrap; }
   .btn {
     padding: 9px 20px; border-radius: 8px; font-weight: 600;
@@ -106,7 +146,7 @@
 
 <div class="card">
   <h1>台股 ETF KD 監控</h1>
-  <p class="subtitle">更新時間：2026-05-20 13:09 UTC+8　　每日台灣時間 14:30 自動更新</p>
+  <p class="subtitle">更新時間：2026-05-20 13:20 UTC+8　　每日台灣時間 14:30 自動更新</p>
   <table>
     <thead>
       <tr>
@@ -190,6 +230,49 @@
     <span><div class="dot" style="background:#69db7c"></div> K9 &lt; 30 買進</span>
     <span><div class="dot" style="background:#ffd43b"></div> 當月出現過訊號 → 觀望</span>
     <span><div class="dot" style="background:#555"></div> 觀望</span>
+  </div>
+
+  <!-- 訊號說明展開區塊 -->
+  <div class="info-section">
+    <button class="info-toggle" onclick="toggleInfo(this)">
+      <span>📖 訊號邏輯說明</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="info-body">
+      <h4>指標計算</h4>
+      <code>RSV = (今日收盤 − 近9日最低) / (近9日最高 − 近9日最低) × 100</code><br><br>
+      <code>K9 今日 = K9 昨日 × 2/3 + RSV 今日 × 1/3　（初始值 50）</code><br>
+      <code>D9 今日 = D9 昨日 × 2/3 + K9 今日 × 1/3　（初始值 50）</code><br><br>
+      訊號以 <strong style="color:#a78bfa">K9（還原權息）</strong> 為準；若還原資料取得失敗，退回原始 K9。
+
+      <h4>基本訊號門檻</h4>
+      <table>
+        <thead><tr><th>K9（還原）</th><th>訊號</th></tr></thead>
+        <tbody>
+          <tr><td>&gt; 80</td><td>🔴 賣出</td></tr>
+          <tr><td>&lt; 30</td><td>🟢 買進</td></tr>
+          <tr><td>30 – 80</td><td>⚪ 觀望</td></tr>
+        </tbody>
+      </table>
+
+      <h4>「當月觀望」修正</h4>
+      <blockquote>
+        若本月（月初至昨天）每日收盤的 K9 <strong>曾經</strong>超過 80 或低於 30，則當月訊號改為「觀望」
+      </blockquote>
+      <table>
+        <thead><tr><th>今日 K9</th><th>本月曾出現訊號？</th><th>最終顯示</th></tr></thead>
+        <tbody>
+          <tr><td>&gt; 80</td><td>否</td><td>🔴 賣出</td></tr>
+          <tr><td>&gt; 80</td><td>是</td><td>🟡 當月賣出觀望</td></tr>
+          <tr><td>&lt; 30</td><td>否</td><td>🟢 買進</td></tr>
+          <tr><td>&lt; 30</td><td>是</td><td>🟡 當月買進觀望</td></tr>
+          <tr><td>30 – 80</td><td>—</td><td>⚪ 觀望</td></tr>
+        </tbody>
+      </table>
+      <span style="color:#555">
+        同一個月內，每日收盤的 KD 只取第一次突破訊號，後續若再次穿越閾值則忽略，避免頻繁進出。
+      </span>
+    </div>
   </div>
 
   <div class="btn-row">
@@ -291,6 +374,13 @@ async function doTrigger(token) {
     showStatus('❌ 網路錯誤，請確認連線', false);
     btn.disabled = false;
   }
+}
+
+function toggleInfo(btn) {
+  const body  = btn.nextElementSibling;
+  const arrow = btn.querySelector('.arrow');
+  const open  = body.classList.toggle('open');
+  arrow.style.transform = open ? 'rotate(180deg)' : '';
 }
 
 async function pollAndReload(token) {
