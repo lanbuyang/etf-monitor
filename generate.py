@@ -208,13 +208,18 @@ def build_html(data):
 <!-- Token 輸入對話框 -->
 <div id="token-dialog">
   <div class="dialog-box">
-    <h3>🔑 輸入 GitHub Token</h3>
-    <p>
-      需要 GitHub Personal Access Token（PAT）才能觸發 Actions 更新。<br>
-      Token 只需勾選 <strong>workflow</strong> 權限，僅存在本機瀏覽器，不會上傳。<br><br>
+    <h3 id="dialog-title">🔑 輸入 GitHub Token</h3>
+    <p id="dialog-desc">
+      需要 <strong>GitHub Classic PAT</strong>（Personal Access Token）才能觸發 Actions 更新。<br>
+      ⚠️ 請勿使用 Fine-grained token，必須使用 <strong>Classic</strong> 類型。<br><br>
+      建立步驟：<br>
+      1. 點下方連結 → 登入 GitHub<br>
+      2. 確認已勾選 <strong>workflow</strong> 權限<br>
+      3. 點「Generate token」→ 複製貼入下方<br><br>
       <a href="https://github.com/settings/tokens/new?scopes=workflow&description=ETF+Monitor" target="_blank">
-        → 點此快速建立 Token
-      </a>
+        → 點此建立 Classic PAT（已預選 workflow 權限）
+      </a><br><br>
+      Token 僅存在本機瀏覽器，不會上傳。
     </p>
     <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
     <div class="dialog-actions">
@@ -267,6 +272,12 @@ const LS_KEY   = 'etf_gh_token';
 
 function getToken() {{ return localStorage.getItem(LS_KEY); }}
 function closeDialog() {{ document.getElementById('token-dialog').classList.remove('open'); }}
+function openDialog(msg) {{
+  if (msg) document.getElementById('dialog-desc').innerHTML = msg +
+    '<br><br><a href="https://github.com/settings/tokens/new?scopes=workflow&description=ETF+Monitor" target="_blank">→ 點此建立 Classic PAT</a>';
+  document.getElementById('token-input').value = '';
+  document.getElementById('token-dialog').classList.add('open');
+}}
 function clearToken() {{
   localStorage.removeItem(LS_KEY);
   showStatus('已清除 Token', false);
@@ -322,9 +333,17 @@ async function doTrigger(token) {{
       pollAndReload(token);
     }} else if (res.status === 401) {{
       localStorage.removeItem(LS_KEY);
-      showStatus('❌ Token 無效，請重新輸入', false);
+      showStatus('❌ Token 無效或已過期，請重新輸入', false);
       btn.disabled = false;
-      setTimeout(() => {{ hideStatus(); document.getElementById('token-dialog').classList.add('open'); }}, 1500);
+      setTimeout(() => {{ hideStatus(); openDialog('Token 無效或已過期，請重新建立。'); }}, 1500);
+    }} else if (res.status === 403) {{
+      localStorage.removeItem(LS_KEY);
+      showStatus('❌ 權限不足（403）：Token 缺少 workflow 權限', false);
+      btn.disabled = false;
+      setTimeout(() => {{
+        hideStatus();
+        openDialog('⚠️ 權限不足（403 錯誤）<br><br>請確認：<br>・使用 <strong>Classic PAT</strong>（非 Fine-grained）<br>・建立時有勾選 <strong>workflow</strong> 權限<br><br>請重新建立 Token 後再試。');
+      }}, 1500);
     }} else {{
       showStatus(`❌ 錯誤 ${{res.status}}，請稍後再試`, false);
       btn.disabled = false;
