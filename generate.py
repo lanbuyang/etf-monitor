@@ -159,9 +159,71 @@ def build_html(data):
     display: inline-block; margin-top: 20px; padding: 6px 14px;
     background: #2a2a2a; border-radius: 8px; font-size: 12px; color: #555;
   }}
+  .btn-row {{ display: flex; gap: 10px; align-items: center; margin-top: 20px; flex-wrap: wrap; }}
+  .btn {{
+    padding: 9px 20px; border-radius: 8px; font-weight: 600;
+    font-size: 14px; cursor: pointer; border: none;
+  }}
+  .btn-primary {{ background: #74c7ec; color: #141414; }}
+  .btn-primary:hover {{ background: #89dceb; }}
+  .btn-primary:disabled {{ background: #2a2a2a; color: #555; cursor: not-allowed; }}
+  .btn-ghost {{ background: transparent; color: #555; border: 1px solid #333; font-size: 12px; }}
+  .btn-ghost:hover {{ color: #888; border-color: #555; }}
+  #status-msg {{
+    font-size: 13px; color: #74c7ec; display: none;
+    align-items: center; gap: 8px;
+  }}
+  .spinner {{
+    width: 14px; height: 14px; border: 2px solid #333;
+    border-top-color: #74c7ec; border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }}
+  @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
+
+  /* Token dialog */
+  #token-dialog {{
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.7); z-index: 100;
+    justify-content: center; align-items: center;
+  }}
+  #token-dialog.open {{ display: flex; }}
+  .dialog-box {{
+    background: #1e1e1e; border-radius: 14px; padding: 28px;
+    width: min(420px, 90vw); box-shadow: 0 8px 40px rgba(0,0,0,.6);
+  }}
+  .dialog-box h3 {{ color: #74c7ec; margin-bottom: 10px; font-size: 16px; }}
+  .dialog-box p {{ font-size: 13px; color: #888; margin-bottom: 14px; line-height: 1.6; }}
+  .dialog-box a {{ color: #74c7ec; }}
+  .dialog-box input {{
+    width: 100%; padding: 9px 12px; background: #2a2a2a;
+    border: 1px solid #444; border-radius: 8px; color: #e9ecef;
+    font-size: 14px; margin-bottom: 14px; outline: none;
+  }}
+  .dialog-box input:focus {{ border-color: #74c7ec; }}
+  .dialog-actions {{ display: flex; gap: 10px; justify-content: flex-end; }}
 </style>
 </head>
 <body>
+
+<!-- Token 輸入對話框 -->
+<div id="token-dialog">
+  <div class="dialog-box">
+    <h3>🔑 輸入 GitHub Token</h3>
+    <p>
+      需要 GitHub Personal Access Token（PAT）才能觸發 Actions 更新。<br>
+      Token 只需勾選 <strong>workflow</strong> 權限，僅存在本機瀏覽器，不會上傳。<br><br>
+      <a href="https://github.com/settings/tokens/new?scopes=workflow&description=ETF+Monitor" target="_blank">
+        → 點此快速建立 Token
+      </a>
+    </p>
+    <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+    <div class="dialog-actions">
+      <button class="btn btn-ghost" onclick="closeDialog()">取消</button>
+      <button class="btn btn-primary" onclick="saveToken()">儲存並更新</button>
+    </div>
+  </div>
+</div>
+
 <div class="card">
   <h1>台股 ETF KD 監控</h1>
   <p class="subtitle">更新時間：{now}　　每日台灣時間 14:30 自動更新</p>
@@ -185,8 +247,123 @@ def build_html(data):
     <span><div class="dot" style="background:#ffd43b"></div> 當月出現過訊號 → 觀望</span>
     <span><div class="dot" style="background:#555"></div> 觀望</span>
   </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="refresh-btn" onclick="triggerRefresh()">⚡ 立即更新資料</button>
+    <button class="btn btn-ghost" onclick="clearToken()" title="清除已儲存的 Token">🔑 清除 Token</button>
+    <span id="status-msg">
+      <div class="spinner"></div>
+      <span id="status-text">觸發中…</span>
+    </span>
+  </div>
   <p class="badge">由 GitHub Actions 自動產生 · 資料來源：Yahoo Finance</p>
 </div>
+
+<script>
+const OWNER    = 'lanbuyang';
+const REPO     = 'etf-monitor';
+const WORKFLOW = 'update.yml';
+const LS_KEY   = 'etf_gh_token';
+
+function getToken() {{ return localStorage.getItem(LS_KEY); }}
+function closeDialog() {{ document.getElementById('token-dialog').classList.remove('open'); }}
+function clearToken() {{
+  localStorage.removeItem(LS_KEY);
+  showStatus('已清除 Token', false);
+  setTimeout(() => hideStatus(), 2500);
+}}
+
+function saveToken() {{
+  const t = document.getElementById('token-input').value.trim();
+  if (!t) return;
+  localStorage.setItem(LS_KEY, t);
+  closeDialog();
+  doTrigger(t);
+}}
+
+function showStatus(msg, spinning = true) {{
+  const el = document.getElementById('status-msg');
+  document.getElementById('status-text').textContent = msg;
+  el.querySelector('.spinner').style.display = spinning ? 'block' : 'none';
+  el.style.display = 'flex';
+}}
+function hideStatus() {{ document.getElementById('status-msg').style.display = 'none'; }}
+
+async function triggerRefresh() {{
+  const token = getToken();
+  if (!token) {{
+    document.getElementById('token-dialog').classList.add('open');
+    return;
+  }}
+  doTrigger(token);
+}}
+
+async function doTrigger(token) {{
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  showStatus('觸發 GitHub Actions…');
+
+  try {{
+    const res = await fetch(
+      `https://api.github.com/repos/${{OWNER}}/${{REPO}}/actions/workflows/${{WORKFLOW}}/dispatches`,
+      {{
+        method: 'POST',
+        headers: {{
+          Authorization: `Bearer ${{token}}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        }},
+        body: JSON.stringify({{ ref: 'main' }}),
+      }}
+    );
+
+    if (res.status === 204) {{
+      showStatus('✅ 更新中，約 1 分鐘後頁面自動重整…');
+      pollAndReload(token);
+    }} else if (res.status === 401) {{
+      localStorage.removeItem(LS_KEY);
+      showStatus('❌ Token 無效，請重新輸入', false);
+      btn.disabled = false;
+      setTimeout(() => {{ hideStatus(); document.getElementById('token-dialog').classList.add('open'); }}, 1500);
+    }} else {{
+      showStatus(`❌ 錯誤 ${{res.status}}，請稍後再試`, false);
+      btn.disabled = false;
+    }}
+  }} catch(e) {{
+    showStatus('❌ 網路錯誤，請確認連線', false);
+    btn.disabled = false;
+  }}
+}}
+
+async function pollAndReload(token) {{
+  // 等 10 秒讓 Actions 排入佇列，再開始輪詢
+  await new Promise(r => setTimeout(r, 10000));
+
+  for (let i = 0; i < 20; i++) {{
+    try {{
+      const res = await fetch(
+        `https://api.github.com/repos/${{OWNER}}/${{REPO}}/actions/runs?per_page=1&event=workflow_dispatch`,
+        {{ headers: {{ Authorization: `Bearer ${{token}}`, Accept: 'application/vnd.github+json' }} }}
+      );
+      const json = await res.json();
+      const run  = json.workflow_runs?.[0];
+      if (run) {{
+        const secs = Math.round((Date.now() - new Date(run.created_at)) / 1000);
+        showStatus(`⏳ Actions 執行中（${{secs}}s）…`);
+        if (run.status === 'completed') {{
+          showStatus('✅ 完成！重新載入頁面…');
+          setTimeout(() => location.reload(), 1500);
+          return;
+        }}
+      }}
+    }} catch(_) {{}}
+    await new Promise(r => setTimeout(r, 6000));
+  }}
+  // 逾時仍重載
+  showStatus('重新載入頁面…', false);
+  setTimeout(() => location.reload(), 1000);
+}}
+</script>
 </body>
 </html>"""
 
