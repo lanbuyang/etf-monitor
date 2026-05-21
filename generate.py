@@ -301,7 +301,7 @@ def build_html(data):
 
 <script>
 // Cloudflare Worker URL（部署後填入）
-const WORKER_URL = '__WORKER_URL__';
+const WORKER_URL = 'https://etf-monitor-dispatch.lanbuyang.workers.dev';
 
 function showStatus(msg, spinning = true) {{
   const el = document.getElementById('status-msg');
